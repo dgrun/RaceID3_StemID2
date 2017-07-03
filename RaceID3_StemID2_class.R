@@ -430,7 +430,7 @@ plot.err.bars.y <- function(x, y, y.err, col="black", lwd=1, lty=1, h=0.1){
   arrows(x-h,y+y.err,x+h,y+y.err,code=0, col=col, lwd=lwd, lty=lty)
 }
 
-clusGapExt <-function (x, FUNcluster, K.max, B = 100, verbose = interactive(), method="euclidean",random=TRUE,
+clusGapExt <-function (x, FUNcluster, K.max, B = 100, verbose = interactive(), method="euclidean",random=TRUE,diss=FALSE,
     ...) 
 {
      stopifnot(is.function(FUNcluster), length(dim(x)) == 2, K.max >= 
@@ -445,23 +445,32 @@ clusGapExt <-function (x, FUNcluster, K.max, B = 100, verbose = interactive(), m
             FUNcluster(X, kk, ...)$cluster
         else rep.int(1L, nrow(X))
         0.5 * sum(vapply(split(ii, clus), function(I) {
+          if ( diss ){
+            xs <- X[I,I, drop = FALSE]
+            sum(xs/nrow(xs))
+          }else{
             xs <- X[I, , drop = FALSE]
             sum(dist.gen(xs,method=method)/nrow(xs))
+          }
         }, 0))
     }
     logW <- E.logW <- SE.sim <- numeric(K.max)
     if (verbose) 
         cat("Clustering k = 1,2,..., K.max (= ", K.max, "): .. ", 
             sep = "")
-    for (k in 1:K.max) logW[k] <- log(W.k(x, k))
-    if (verbose) 
-        cat("done\n")
-    xs <- scale(x, center = TRUE, scale = FALSE)
-    m.x <- rep(attr(xs, "scaled:center"), each = n)
-    V.sx <- svd(xs)$v
-    rng.x1 <- apply(xs %*% V.sx, 2, range)
-    logWks <- matrix(0, B, K.max)
+     for (k in 1:K.max){
+       cat("k =",k,"\n")
+       logW[k] <- log(W.k(x, k))
+     }
+     if (verbose) 
+       cat("done\n")
      if (random){
+       xs <- scale(x, center = TRUE, scale = FALSE)
+       m.x <- rep(attr(xs, "scaled:center"), each = n)
+       V.sx <- svd(xs)$v
+       rng.x1 <- apply(xs %*% V.sx, 2, range)
+       logWks <- matrix(0, B, K.max)
+
        if (verbose) 
          cat("Bootstrapping, b = 1,2,..., B (= ", B, ")  [one \".\" per sample]:\n", 
              sep = "")
@@ -489,6 +498,7 @@ clusGapExt <-function (x, FUNcluster, K.max, B = 100, verbose = interactive(), m
     structure(class = "clusGap", list(Tab = cbind(logW, E.logW, 
         gap = E.logW - logW, SE.sim), n = n, B = B, FUNcluster = FUNcluster))
 }
+
 
 clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TRUE,SE.method="Tibs2001SEmax",SE.factor=.25,B.gap=50,cln=0,rseed=17000,FUNcluster="kmedoids",distances=NULL,link="single")
 {
@@ -518,7 +528,8 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
     if ( sat ){
       if ( ! do.gap ){
         if ( FUNcluster == "kmeans" )   gpr <- clusGapExt(as.matrix(di), FUN = kmeans, K.max = clustnr, B = B.gap, iter.max=100, random=FALSE)
-        if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric)
+        ##if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric)
+        if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(diM), FUN = function(x,k) pam(as.dist(x),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric,diss=TRUE)
         if ( FUNcluster == "clara" ) gpr <- clusGapExt(as.matrix(diCL), FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, random=FALSE, method="euclidean")
         if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclusterCBI(x,k,link=link,scaling=FALSE); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
       }
@@ -535,7 +546,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
     if ( cln <= 1 ) {
       clb <- list(result=list(partition=rep(1,dim(x)[2])),bootmean=1)
       names(clb$result$partition) <- names(x)
-      return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara") ) dist.gen(di,method=metric) else di))
+      return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara") ) diM else di))
     }
     if ( FUNcluster == "kmeans" ) clb <- clusterboot(di,B=bootnr,distances=FALSE,bootmethod="boot",clustermethod=kmeansCBI,krange=cln,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     ##if ( FUNcluster == "kmedoids" ) clb <- clusterboot(diM,B=bootnr,bootmethod="boot",clustermethod=pamkCBI,k=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
