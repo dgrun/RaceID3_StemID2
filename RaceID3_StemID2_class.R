@@ -995,7 +995,7 @@ varRegression <- function(x,vars){
 
 CCcorrect <- function(x,vset=NULL,CGenes=NULL,ccor=.4,nComp=NULL,pvalue=.01,quant=.01,mode="pca"){
   x <- log2(x)
-  if ( is.null(nComp) ) nComp <- ncol(x)
+  if ( is.null(nComp) ) nComp <- min(ncol(x),nrow(x))
   ## x <- object@fdata
   ## mode pca or ica
   X <- as.matrix(t(x))
