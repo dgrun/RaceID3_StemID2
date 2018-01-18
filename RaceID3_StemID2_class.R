@@ -507,7 +507,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
     di  <- t(x)
     diM <- dist.gen(di,method=metric)
   }else{
-    di <- dist.gen(t(x),method=metric)
+    di <- as.matrix(dist.gen(t(x),method=metric))
   }
   if ( FUNcluster %in% c("clara") ){
     diCL <- as.data.frame( cmdscale(as.matrix(diM),k=nrow(di)-1) )
@@ -522,7 +522,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
       if ( FUNcluster == "kmeans" )   gpr <- clusGapExt(as.matrix(di), FUN = kmeans, K.max = clustnr, B = B.gap, iter.max=100)
       if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, method=metric)
       if ( FUNcluster == "clara" ) gpr <- clusGapExt(diCL, FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, method="euclidean")
-      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclusterCBI(x,k,link=link,scaling=FALSE); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
+      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclustCBI(x,k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
       if ( f ) cln <- maxSE(gpr$Tab[,3],gpr$Tab[,4],method=SE.method,SE.factor)
     }
     if ( sat ){
@@ -531,7 +531,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
         ##if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric)
         if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(diM), FUN = function(x,k) pam(as.dist(x),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric,diss=TRUE)
         if ( FUNcluster == "clara" ) gpr <- clusGapExt(as.matrix(diCL), FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, random=FALSE, method="euclidean")
-        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclusterCBI(x,k,link=link,scaling=FALSE); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
+        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <-hclustCBI(x,k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
       }
       g <- gpr$Tab[,1]
       y <- g[-length(g)] - g[-1]
@@ -552,7 +552,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
     ##if ( FUNcluster == "kmedoids" ) clb <- clusterboot(diM,B=bootnr,bootmethod="boot",clustermethod=pamkCBI,k=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     if ( FUNcluster == "kmedoids" ) clb <- clusterboot(diM,B=bootnr,bootmethod="boot",clustermethod=pamkdCBI,scaling=FALSE,diss=TRUE,k=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     if ( FUNcluster == "clara" ) clb <- clusterboot(diCL,B=bootnr,bootmethod="boot",clustermethod=pamkdCBI,usepam=FALSE,scaling=FALSE,krange=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
-    if ( FUNcluster == "hclust" ) clb <- clusterboot(di,B=bootnr,distances=FALSE,bootmethod="boot",clustermethod=hclusterCBI,k=cln,link=link,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
+    if ( FUNcluster == "hclust" ) clb <- clusterboot(di,B=bootnr,distances=FALSE,bootmethod="boot",clustermethod=hclustCBI,method="ward.D2",k=cln,link=link,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara") ) diM else di))
   }
 }
