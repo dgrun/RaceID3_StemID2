@@ -503,7 +503,7 @@ clusGapExt <-function (x, FUNcluster, K.max, B = 100, verbose = interactive(), m
 clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TRUE,SE.method="Tibs2001SEmax",SE.factor=.25,B.gap=50,cln=0,rseed=17000,FUNcluster="kmedoids",distances=NULL,link="single")
 {
   if ( clustnr < 2) stop("Choose clustnr > 1")
-  if ( FUNcluster %in% c("kmedoids","clara") ){
+  if ( FUNcluster %in% c("kmedoids","clara","hclust") ){
     di  <- t(x)
     diM <- dist.gen(di,method=metric)
   }else{
@@ -522,7 +522,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
       if ( FUNcluster == "kmeans" )   gpr <- clusGapExt(as.matrix(di), FUN = kmeans, K.max = clustnr, B = B.gap, iter.max=100)
       if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, method=metric)
       if ( FUNcluster == "clara" ) gpr <- clusGapExt(diCL, FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, method="euclidean")
-      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclustCBI(x,k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
+      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
       if ( f ) cln <- maxSE(gpr$Tab[,3],gpr$Tab[,4],method=SE.method,SE.factor)
     }
     if ( sat ){
@@ -531,7 +531,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
         ##if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric)
         if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(diM), FUN = function(x,k) pam(as.dist(x),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric,diss=TRUE)
         if ( FUNcluster == "clara" ) gpr <- clusGapExt(as.matrix(diCL), FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, random=FALSE, method="euclidean")
-        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <-hclustCBI(x,k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
+        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <-hclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
       }
       g <- gpr$Tab[,1]
       y <- g[-length(g)] - g[-1]
@@ -546,14 +546,14 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
     if ( cln <= 1 ) {
       clb <- list(result=list(partition=rep(1,dim(x)[2])),bootmean=1)
       names(clb$result$partition) <- names(x)
-      return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara") ) diM else di))
+      return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara","hclust") ) diM else di))
     }
     if ( FUNcluster == "kmeans" ) clb <- clusterboot(di,B=bootnr,distances=FALSE,bootmethod="boot",clustermethod=kmeansCBI,krange=cln,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     ##if ( FUNcluster == "kmedoids" ) clb <- clusterboot(diM,B=bootnr,bootmethod="boot",clustermethod=pamkCBI,k=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     if ( FUNcluster == "kmedoids" ) clb <- clusterboot(diM,B=bootnr,bootmethod="boot",clustermethod=pamkdCBI,scaling=FALSE,diss=TRUE,k=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
     if ( FUNcluster == "clara" ) clb <- clusterboot(diCL,B=bootnr,bootmethod="boot",clustermethod=pamkdCBI,usepam=FALSE,scaling=FALSE,krange=cln,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
-    if ( FUNcluster == "hclust" ) clb <- clusterboot(di,B=bootnr,distances=FALSE,bootmethod="boot",clustermethod=hclustCBI,method="ward.D2",k=cln,link=link,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed)
-    return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara") ) diM else di))
+    if ( FUNcluster == "hclust" ) clb <- clusterboot(diM,B=bootnr,distances=TRUE,bootmethod="boot",clustermethod=disthclustCBI,method="ward.D2",k=cln,link=link,scaling=FALSE,multipleboot=FALSE,bscompare=TRUE,seed=rseed,diss=TRUE)
+    return(list(x=x,clb=clb,gpr=gpr,di=if ( FUNcluster %in% c("kmedoids","clara","hclust") ) diM else di))
   }
 }
 
@@ -725,7 +725,7 @@ setMethod("findoutliers",
                 cent <- d[,f]
                 md <- f
               }else{
-                if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara") ){
+                if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust") ){
                   ##x <- apply(as.matrix(dist.gen(t(d[,f]),method=object@clusterpar$metric)),2,mean)
                   x <- apply(object@distances[f,f],2,mean)
                   md <- f[which(x == min(x))[1]]
@@ -735,7 +735,7 @@ setMethod("findoutliers",
                 }
               }
               if ( i == min(cpart) ) dcent <- data.frame(cent) else dcent <- cbind(dcent,cent)
-              if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara") ){
+              if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust") ){
                 if ( i == min(cpart) ) tmp <- data.frame(object@distances[,md]) else tmp <- cbind(tmp,object@distances[,md])
               }else{
                 if ( i == min(cpart) ) tmp <- data.frame(apply(d,2,dist.gen.pairs,y=cent,method=object@clusterpar$metric)) else tmp <- cbind(tmp,apply(d,2,dist.gen.pairs,y=cent,method=object@clusterpar$metric))
@@ -761,7 +761,7 @@ setMethod("comptsne",
           definition = function(object,rseed,sammonmap,initial_cmd,fast,perplexity,...){
             if ( length(object@cluster$kpart) == 0 ) stop("run clustexp before comptsne")
             set.seed(rseed)
-            di <- if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara")) as.dist(object@distances) else dist.gen(as.matrix(object@distances))
+            di <- if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust")) as.dist(object@distances) else dist.gen(as.matrix(object@distances))
             if ( sammonmap ){
               object@tsne <- as.data.frame(sammon(di,k=2)$points)
             }else{
@@ -840,7 +840,7 @@ setMethod("plotsilhouette",
             if ( length(object@cluster$kpart) == 0 ) stop("run clustexp before plotsilhouette")
             if ( length(unique(object@cluster$kpart)) < 2 ) stop("only a single cluster: no silhouette plot")
             kpart <- object@cluster$kpart
-            distances  <- if ( object@clusterpar$FUNcluster == "kmedoids" ) as.dist(object@distances) else dist.gen(object@distances)
+            distances  <- if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust") ) as.dist(object@distances) else dist.gen(object@distances)
             si <- silhouette(kpart,distances)
             plot(si)
           }
@@ -880,14 +880,14 @@ setMethod("clustheatmap",
               if ( j == 1 ) tmp <- data.frame(cent) else tmp <- cbind(tmp,cent)
             }
             names(tmp) <- paste("cl",na,sep=".")
-            ld <- if ( object@clusterpar$FUNcluster == "kmedoids" ) dist.gen(t(tmp),method=object@clusterpar$metric) else dist.gen(as.matrix(dist.gen(t(tmp),method=object@clusterpar$metric)))
+            ld <- if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust") ) dist.gen(t(tmp),method=object@clusterpar$metric) else dist.gen(as.matrix(dist.gen(t(tmp),method=object@clusterpar$metric)))
             if ( max(part) > 1 )  cclmo <- hclust(ld,method=hmethod)$order else cclmo <- 1
             q <- part
             for ( i in 1:max(part) ){
               q[part == na[cclmo[i]]] <- i
             }
             part <- q
-            di <-  if ( object@clusterpar$FUNcluster == "kmedoids" ) object@distances else as.data.frame( as.matrix( dist.gen(t(object@distances)) ) )
+            di <-  if ( object@clusterpar$FUNcluster %in% c("kmedoids","clara","hclust") ) object@distances else as.data.frame( as.matrix( dist.gen(t(object@distances)) ) )
             pto <- part[order(part,decreasing=FALSE)]
             ptn <- c()
             for ( i in 1:max(pto) ){ pt <- names(pto)[pto == i]; z <- if ( length(pt) == 1 ) pt else pt[hclust(as.dist(t(di[pt,pt])),method=hmethod)$order]; ptn <- append(ptn,z) }
