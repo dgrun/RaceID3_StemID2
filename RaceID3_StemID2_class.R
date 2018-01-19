@@ -522,7 +522,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
       if ( FUNcluster == "kmeans" )   gpr <- clusGapExt(as.matrix(di), FUN = kmeans, K.max = clustnr, B = B.gap, iter.max=100)
       if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, method=metric)
       if ( FUNcluster == "clara" ) gpr <- clusGapExt(diCL, FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, method="euclidean")
-      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- hclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
+      if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- disthclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap) 
       if ( f ) cln <- maxSE(gpr$Tab[,3],gpr$Tab[,4],method=SE.method,SE.factor)
     }
     if ( sat ){
@@ -531,7 +531,7 @@ clustfun <- function(x,clustnr=20,bootnr=50,metric="pearson",do.gap=FALSE,sat=TR
         ##if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(di), FUN = function(x,k) pam(dist.gen(x,method=metric),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric)
         if ( FUNcluster == "kmedoids" ) gpr <- clusGapExt(as.matrix(diM), FUN = function(x,k) pam(as.dist(x),k), K.max = clustnr, B = B.gap, random=FALSE, method=metric,diss=TRUE)
         if ( FUNcluster == "clara" ) gpr <- clusGapExt(as.matrix(diCL), FUN = function(x,k) clara(x,k), K.max = clustnr, B = B.gap, random=FALSE, method="euclidean")
-        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <-hclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
+        if ( FUNcluster == "hclust" )   gpr <- clusGapExt(as.matrix(di), FUN = function(x,k){ y <- disthclustCBI(dist.gen(x,method=metric),k,link=link,scaling=FALSE,method="ward.D2"); y$cluster <- y$partition; y }, K.max = clustnr, B = B.gap, random=FALSE)
       }
       g <- gpr$Tab[,1]
       y <- g[-length(g)] - g[-1]
