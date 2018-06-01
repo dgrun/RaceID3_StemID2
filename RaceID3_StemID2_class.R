@@ -1013,53 +1013,63 @@ CCcorrect <- function(x,vset=NULL,CGenes=NULL,ccor=.4,nComp=NULL,pvalue=.01,quan
   }
   n <- c()
   if ( !is.null(vset) ){
-    for ( k in vset){
-      m <- intersect(rownames(y),k)
-      if ( length(m) > 0 ){
-        for ( i in 1:nComp){
-          q   <- quantile(y[,i],1-quant)
-          nq  <- rownames(y)[y[,i] > q]
-          nqm <- intersect(m,nq)
-          pvg <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
-          q   <- quantile(y[,i],quant)
-          nq  <- rownames(y)[y[,i] < q]
-          nqm <- intersect(m,nq)
-          pvl <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
-          if ( min(pvg,pvl) < pvalue ){
-            n <- append(n,i)
-            ##break
+      for ( k in vset){
+          m <- intersect(rownames(y),k)
+          if ( length(m) > 0 ){
+              for ( i in 1:nComp){
+                  pvg <- pvl <- Inf
+                  q   <- quantile(y[,i],1-quant)
+                  nq  <- rownames(y)[y[,i] > q]
+                  nqm <- intersect(m,nq)
+                  if ( length(nqm) > 0 ){
+                      pvg <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
+                  }
+                  q   <- quantile(y[,i],quant)
+                  nq  <- rownames(y)[y[,i] < q]
+                  nqm <- intersect(m,nq)
+                  if ( length(nqm) > 0 ){
+                      pvl <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
+                  }
+                  if ( min(pvg,pvl) < pvalue ){
+                      n <- append(n,i)
+                      ##break
+                  }
+              }
           }
-        }
       }
-    }
   }
   if ( !is.null(CGenes) ){
-    for ( g in CGenes ){
-      if ( g %in% rownames(x) ){
-        z <- apply(t(X),1,function(x,y) sigcor(x,y,cthr=ccor),y=t(x[g,]))
-        m <- rownames(x)[ !is.na(z) & ( z  > ccor | z  < -ccor ) ]
-        if ( length(m) > 0 ){
-          for ( i in 1:nComp){
-            q   <- quantile(y[,i],1-quant)
-            nq  <- rownames(y)[y[,i] > q]
-            nqm <- intersect(m,nq)
-            pvg <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
-            q   <- quantile(y[,i],.01)
-            nq  <- rownames(y)[y[,i] < q]
-            nqm <- intersect(m,nq)
-            pvl <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
-            if ( min(pvg,pvl) < pvalue ){
-              n <- append(n,i)
-              ##break
-            }
+      for ( g in CGenes ){
+          if ( g %in% rownames(x) ){
+              z <- apply(t(X),1,function(x,y) sigcor(x,y,cthr=ccor),y=t(x[g,]))
+              m <- rownames(x)[ !is.na(z) & ( z  > ccor | z  < -ccor ) ]
+              if ( length(m) > 0 ){
+                  for ( i in 1:nComp){
+                      pvg <- pvl <- Inf
+                      q   <- quantile(y[,i],1-quant)
+                      nq  <- rownames(y)[y[,i] > q]
+                      nqm <- intersect(m,nq)
+                      if ( length(nqm) > 0 ){
+                          pvg <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
+                      }
+                      q   <- quantile(y[,i],.01)
+                      nq  <- rownames(y)[y[,i] < q]
+                      nqm <- intersect(m,nq)
+                      if ( length(nqm) > 0 ){
+                          pvl <- fisher.test(matrix(c(ncol(y)-length(nq),length(nq),length(m) - length(nqm),length(nqm)),ncol=2),alternative="g")$p.value
+                      }
+                      if ( min(pvg,pvl) < pvalue ){
+                          n <- append(n,i)
+                          ##break
+                      }
+                  }
+              }
           }
-        }
       }
-    }
   }
   n <- unique(n)
   f <- ! 1:nComp %in% n
-
+  
   if ( mode == "pca" ){
     Xhat = Xpca$x[,(1:nComp)[f]] %*% t(Xpca$rotation[,(1:nComp)[f]])
     Xhat = scale(Xhat, center = -mu, scale = FALSE)
