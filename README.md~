@@ -17,6 +17,10 @@ StemID2/RaceID3 sample code: RaceID3_StemID2_sample.R
 StemID2/RaceID3 reference manual: Reference_manual_RaceID3_StemID2.pdf
 StemID2/RaceID3 sample data: transcript_counts_intestine_5days_YFP.xls
 
+Reference RaceID3 and StemID2:
+
+Herman, JS. et al. FateID infers cell fate bias in multipotent progenitors from single-cell RNA-seq data. Nature Methods 15(5):379-386 (2018).
+
 Reference RaceID2 and StemID:
 Grün, D. et al. De Novo Prediction of Stem Cell Identity using Single-Cell Transcriptome Data. Cell Stem Cell 19, 266–277 (2016).
 

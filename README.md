@@ -1,7 +1,6 @@
 PLEASE USE THE NEW RACEID PACKAGE on CRAN OR https://github.com/dgrun/RaceID3_StemID2_package !
 THIS IS REPLACING THE RACEID SCRIPTS IN THIS REPOSITORY!
 
-
 StemID2 and RaceID3 algorithms
 
 RaceID3 is an advanced version of RaceID, an algorithm for the identification of rare and abundant cell types from single cell transcriptome data. The method is based on transcript counts obtained with unique molecular identifies.
